@@ -10,25 +10,31 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ValidationErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex) {
-        List<ValidationErrorResponse.FieldErrorItem> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(err -> new ValidationErrorResponse.FieldErrorItem(err.getField(), err.getDefaultMessage()))
-                .collect(Collectors.toList());
+    public ResponseEntity<Object> handleValidationErrors(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .collect(Collectors.toMap(
+                        fieldError -> fieldError.getField(),
+                        fieldError -> fieldError.getDefaultMessage(),
+                        (existing, replacement) -> existing
+                ));
 
-        ValidationErrorResponse response = new ValidationErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Erro de validação nos campos.",
-                errors
-        );
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("status", HttpStatus.BAD_REQUEST.value());
+        responseBody.put("error", "Validation Error");
+        responseBody.put("messages", errors);
 
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -60,5 +66,13 @@ public class RestExceptionHandler {
         return new ResponseEntity<>(new ErrorResponse(500, "Erro interno no servidor."), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(CourseAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleCourseAlreadyExists(CourseAlreadyExistsException ex) {
+        return new ResponseEntity<>(new ErrorResponse(400, "Curso já existe."), HttpStatus.BAD_REQUEST);
+    }
 
+    @ExceptionHandler(NotFoundException.class)
+    public  ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex){
+        return new ResponseEntity<>(new ErrorResponse(400, ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
 }

@@ -6,7 +6,7 @@ public class ValidationErrorResponse extends ErrorResponse {
     private List<FieldErrorItem> errors;
 
     public ValidationErrorResponse(int status, String message, List<FieldErrorItem> errors) {
-        super(message, status);
+        super(status, message);
         this.errors = errors;
     }
 
