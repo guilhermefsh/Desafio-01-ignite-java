@@ -1,9 +1,13 @@
 package com.ignite.desafio_01.exceptions;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.LocalDateTime;
 
 public class ErrorResponse{
+    @Schema(description = "status", example = "400")
     private int status;
+    @Schema(description = "message", example = "Curso não encontrado")
     private String message;
 
     public ErrorResponse(int status, String message) {
